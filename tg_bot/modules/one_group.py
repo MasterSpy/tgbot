@@ -25,7 +25,7 @@ def mute_group(bot, update):
     raise DispatcherHandlerStop
 
 #capture every message received from a non-allowed group, except "/id" command
-mute_handler = MessageHandler(~ Filters.chat(ALLOWED_GROUP) & ~ id_command(), mute_group)
+mute_handler = MessageHandler(Filters.group & ~ Filters.chat(ALLOWED_GROUP) & ~ id_command(), mute_group)
 
 #use a very high priority to make sure this is handled before anything else
 dispatcher.add_handler(mute_handler, -99)
