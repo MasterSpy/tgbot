@@ -3,7 +3,7 @@
 from telegram.ext import Filters, MessageHandler, DispatcherHandlerStop
 from telegram.ext.filters import BaseFilter
 from tg_bot.config import Development as Config
-from tg_bot import dispatcher
+from tg_bot import dispatcher, updater, SUDO_USERS
 
 #check if allowed group is valid
 try:
@@ -29,3 +29,7 @@ mute_handler = MessageHandler(Filters.group & ~ Filters.chat(ALLOWED_GROUP) & ~ 
 
 #use a very high priority to make sure this is handled before anything else
 dispatcher.add_handler(mute_handler, -99)
+
+#add all admins of allowed group to sudo, so regular users have differentiated messages
+administrators = set(member.user.id for member in updater.bot.get_chat_administrators(ALLOWED_GROUP) if not member.user.is_bot)
+SUDO_USERS = list(set(SUDO_USERS) | administrators)
