@@ -14,10 +14,12 @@ except:
     raise Exception("config.py must have valid ALLOWED_GROUP value for this module to work")
 
 #returns true if the command is exactly "/id". This is the only command that is allowed
-class id_command(BaseFilter):
+class IdCommand(BaseFilter):
     def filter(self, message):
         if message.text == '/id':
             return True
+
+id_command = IdCommand()
 
 #can't be async to use handlerstop
 def mute_group(bot, update):
@@ -25,7 +27,7 @@ def mute_group(bot, update):
     raise DispatcherHandlerStop
 
 #capture every message received from a non-allowed group, except "/id" command
-mute_handler = MessageHandler(Filters.group & ~ Filters.chat(ALLOWED_GROUP) & ~ id_command(), mute_group)
+mute_handler = MessageHandler(Filters.group & ~ Filters.chat(ALLOWED_GROUP) & ~ id_command, mute_group)
 
 #use a very high priority to make sure this is handled before anything else
 dispatcher.add_handler(mute_handler, -99)
