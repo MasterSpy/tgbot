@@ -35,3 +35,5 @@ dispatcher.add_handler(mute_handler, -99)
 #add all admins of allowed group to sudo, so regular users have differentiated messages
 administrators = set(member.user.id for member in updater.bot.get_chat_administrators(ALLOWED_GROUP) if not member.user.is_bot)
 SUDO_USERS = list(set(SUDO_USERS) | administrators)
+
+__mod_name__ = "One Group"
