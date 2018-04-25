@@ -10,6 +10,7 @@ from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.locks_sql as sql
 from tg_bot import dispatcher, SUDO_USERS, LOGGER
+from tg_bot.config import Development as Config
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import can_delete, is_user_admin, user_not_admin, user_admin, \
     bot_can_delete, is_bot_admin
@@ -199,6 +200,12 @@ def del_lockables(bot: Bot, update: Update):
                         chat.kick_member(new_mem.id)
                         message.reply_text("Only admins are allowed to add bots to this chat! Get outta here.")
             else:
+                #allow whitelisted URLs
+                if lockable == 'url':
+                    entities = message.parse_entities(MessageEntity.URL)
+                    if all( any(strip_uri(text).startswith(white) for white in Config.WHITELIST)
+                                for text in entities.values()):
+                        continue
                 try:
                     message.delete()
                 except BadRequest as excp:
@@ -259,6 +266,11 @@ def build_lock_message(chat_id):
     return res
 
 
+def strip_uri(url):
+    url = url.replace('https://', '', 1).replace('http://', '', 1).replace('ftp://', '', 1).lower()
+    if url.startswith('www.'):
+        url = url[4:]
+    return url
 @run_async
 @user_admin
 def list_locks(bot: Bot, update: Update):
