@@ -1,4 +1,5 @@
 import html
+import re
 from typing import Optional, List
 
 from telegram import Message, Chat, Update, Bot, ParseMode, User, MessageEntity
@@ -203,8 +204,12 @@ def del_lockables(bot: Bot, update: Update):
                 #allow whitelisted URLs
                 if lockable == 'url':
                     entities = message.parse_entities(MessageEntity.URL)
-                    if all( any(strip_uri(text).startswith(white) for white in Config.WHITELIST)
-                                for text in entities.values()):
+                    #caches compiled expressions to reuse if multiple urls in a message
+                    whitelist = [re.compile(r'(^http:\/\/|^https:\/\/|^ftp:\/\/|^)(www\.)?('+white+')')
+                            for white in Config.WHITELIST]
+                    #if all URLs are any of the whitelisted ones, it's good
+                    if all( any(white.search(text) for white in whitelist)
+                            for text in entities.values()):
                         continue
                 try:
                     message.delete()
@@ -265,12 +270,6 @@ def build_lock_message(chat_id):
                                             all([restr.messages, restr.media, restr.other, restr.preview]))
     return res
 
-
-def strip_uri(url):
-    url = url.replace('https://', '', 1).replace('http://', '', 1).replace('ftp://', '', 1).lower()
-    if url.startswith('www.'):
-        url = url[4:]
-    return url
 @run_async
 @user_admin
 def list_locks(bot: Bot, update: Update):
