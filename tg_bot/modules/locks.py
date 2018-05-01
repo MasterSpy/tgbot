@@ -14,7 +14,7 @@ from tg_bot import dispatcher, SUDO_USERS, LOGGER
 from tg_bot.config import Development as Config
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import can_delete, is_user_admin, user_not_admin, user_admin, \
-    bot_can_delete, is_bot_admin
+    bot_can_delete, is_bot_admin, bot_admin, can_restrict
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.sql import users_sql
@@ -42,7 +42,7 @@ PREVIEWS = Filters.entity("url")
 RESTRICTION_TYPES = {'messages': MESSAGES,
                      'media': MEDIA,
                      'other': OTHER,
-                     # 'previews': PREVIEWS, # NOTE: this has been removed cos its useless atm.
+                     'previews': PREVIEWS, # NOTE: this has been removed cos its useless atm.
                      'all': Filters.all}
 
 PERM_GROUP = 1
@@ -79,7 +79,8 @@ def unrestr_members(bot, chat_id, members, messages=True, media=True, other=True
 
 @run_async
 def locktypes(bot: Bot, update: Update):
-    update.effective_message.reply_text("\n - ".join(["Locks: "] + list(LOCK_TYPES) + list(RESTRICTION_TYPES)))
+    update.effective_message.reply_text("\n - ".join(["Locks: "] + list(LOCK_TYPES)) +
+                                        "\n - ".join(["\nRestrictions:"] + list(RESTRICTION_TYPES)))
 
 
 @user_admin
@@ -103,11 +104,8 @@ def lock(bot: Bot, update: Update, args: List[str]) -> str:
 
             elif args[0] in RESTRICTION_TYPES:
                 sql.update_restriction(chat.id, args[0], locked=True)
-                if args[0] == "previews":
-                    members = users_sql.get_chat_members(str(chat.id))
-                    restr_members(bot, chat.id, members, messages=True, media=True, other=True)
 
-                message.reply_text("Locked {} for all non-admins!".format(args[0]))
+                message.reply_text("Locked {} for new members!".format(args[0]))
                 return "<b>{}:</b>" \
                        "\n#LOCK" \
                        "\n<b>Admin:</b> {}" \
@@ -160,12 +158,7 @@ def unlock(bot: Bot, update: Update, args: List[str]) -> str:
                 elif args[0] == "all":
                     unrestr_members(bot, chat.id, members, True, True, True, True)
                 """
-                message.reply_text("Unlocked {} for everyone!".format(args[0]))
-                message.reply_text(
-                    "NOTE: due to a recent abuse of locking, {} will now only be deleting messages, and not "
-                    "restricting users via the tg api. This shouldn't affect all you users though, so dont worry! "
-                    "Just means that any restricted users should be manually unrestricted from the chat "
-                    "admin pannel.".format(bot.first_name))
+                message.reply_text("Unlocked {} for new members!".format(args[0]))
 
                 return "<b>{}:</b>" \
                        "\n#UNLOCK" \
@@ -221,6 +214,25 @@ def del_lockables(bot: Bot, update: Update):
 
             break
 
+@run_async
+@bot_admin
+@can_restrict
+def new_member(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
+
+    new_members = update.effective_message.new_chat_members
+    restrictions = sql.get_restr(chat.id)
+    for new_mem in new_members:
+        # Don't restrict yourself
+        if new_mem.id == bot.id:
+            continue
+
+        elif restrictions:
+            bot.restrict_chat_member(chat_id=chat.id, user_id=new_mem.id,
+                    can_send_messages= not restrictions.messages, can_send_media_messages= not restrictions.media,
+                    can_send_other_messages= not restrictions.other, can_add_web_page_previews= not restrictions.preview,
+                    until_date=0)
+
 
 @run_async
 @user_not_admin
@@ -262,12 +274,11 @@ def build_lock_message(chat_id):
                                              locks.video, locks.contact, locks.photo, locks.gif, locks.url, locks.bots,
                                              locks.forward, locks.game)
         if restr:
-            res += "\n - messages = `{}`" \
+            res += "\nNew member restrictions:" \
+                   "\n - messages = `{}`" \
                    "\n - media = `{}`" \
                    "\n - other = `{}`" \
-                   "\n - previews = `{}`" \
-                   "\n - all = `{}`".format(restr.messages, restr.media, restr.other, restr.preview,
-                                            all([restr.messages, restr.media, restr.other, restr.preview]))
+                   "\n - previews = `{}`".format(restr.messages, restr.media, restr.other, restr.preview)
     return res
 
 @run_async
@@ -301,6 +312,7 @@ eg:
 Locking urls will auto-delete all messages with urls which haven't been whitelisted, locking stickers will delete all \
 stickers, etc.
 Locking bots will stop non-admins from adding bots to the chat.
+Restrictions don't delete messages. Restricted members can never send them in the first place.
 """
 
 __mod_name__ = "Locks"
@@ -316,4 +328,5 @@ dispatcher.add_handler(LOCKTYPES_HANDLER)
 dispatcher.add_handler(LOCKED_HANDLER)
 
 dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, del_lockables), PERM_GROUP)
-dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, rest_handler), REST_GROUP)
+#dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, rest_handler), REST_GROUP)
+dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member), REST_GROUP)

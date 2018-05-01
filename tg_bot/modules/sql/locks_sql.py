@@ -135,12 +135,27 @@ def update_restriction(chat_id, restr_type, locked):
 
         if restr_type == "messages":
             curr_restr.messages = locked
+            if locked:
+                curr_restr.media = locked
+                curr_restr.other = locked
+                curr_restr.preview = locked
         elif restr_type == "media":
             curr_restr.media = locked
+            if locked:
+                curr_restr.other = locked
+                curr_restr.preview = locked
+            else:
+                curr_restr.messages = locked
         elif restr_type == "other":
             curr_restr.other = locked
+            if not locked:
+                curr_restr.messages = locked
+                curr_restr.media = locked
         elif restr_type == "previews":
             curr_restr.preview = locked
+            if not locked:
+                curr_restr.messages = locked
+                curr_restr.media = locked
         elif restr_type == "all":
             curr_restr.messages = locked
             curr_restr.media = locked
