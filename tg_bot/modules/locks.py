@@ -2,12 +2,13 @@ import html
 import re
 from typing import Optional, List
 
+import telegram
 from telegram import Message, Chat, Update, Bot, ParseMode, User, MessageEntity
 from telegram import TelegramError
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
-from telegram.utils.helpers import mention_html
+from telegram.utils.helpers import mention_html, escape_markdown
 
 import tg_bot.modules.sql.locks_sql as sql
 from tg_bot import dispatcher, SUDO_USERS, LOGGER
@@ -81,6 +82,64 @@ def unrestr_members(bot, chat_id, members, messages=True, media=True, other=True
 def locktypes(bot: Bot, update: Update):
     update.effective_message.reply_text("\n - ".join(["Locks: "] + list(LOCK_TYPES)) +
                                         "\n - ".join(["\nRestrictions:"] + list(RESTRICTION_TYPES)))
+
+
+@user_admin
+def add_whitelist(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message  # type: Optional[Message]
+    entities = message.parse_entities(MessageEntity.URL)
+    added = []
+    for url in entities.values():
+        trimmed = re.search(r'(^http:\/\/|^https:\/\/|^ftp:\/\/|^)(www\.)?(\S*)', url, flags=re.I).group(3).lower()
+        if trimmed.endswith('/'):
+            trimmed = trimmed[:-1]
+        sql.add_whitelist(chat.id, trimmed)
+        added.append(trimmed)
+    message.reply_text("Added {} to whitelist.".format(', '.join(w for w in added)))
+
+
+@user_admin
+def remove_whitelist(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message  # type: Optional[Message]
+    entities = message.parse_entities(MessageEntity.URL)
+    removed = []
+    for url in entities.values():
+        trimmed = re.search(r'(^http:\/\/|^https:\/\/|^ftp:\/\/|^)(www\.)?(\S*)', url, flags=re.I).group(3).lower()
+        if trimmed.endswith('/'):
+            trimmed = trimmed[:-1]
+        if sql.remove_whitelist(chat.id, trimmed):
+            removed.append(trimmed)
+    if removed:
+        message.reply_text("Removed `{}` from whitelist.".format('`, `'.join(w for w in removed)),
+            parse_mode=ParseMode.MARKDOWN)
+    else:
+        message.reply_text("Could not remove URL from whitelist.")
+
+def list_white(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
+    message = update.effective_message  # type: Optional[Message]
+    all_whitelisted = sql.get_whitelist(chat.id)
+
+    if not all_whitelisted:
+        update.effective_message.reply_text("No URLs are whitelisted here!")
+        return
+
+    BASIC_WHITE_STRING = "Whitelisted URLs:\n"
+    listwhite = BASIC_WHITE_STRING
+    for url in sorted(all_whitelisted.keys()):
+        entry = "{}, ".format(url)
+        if len(entry) + len(listwhite) > telegram.MAX_MESSAGE_LENGTH:
+            update.effective_message.reply_text(listwhite)
+            listwhite = entry
+        else:
+            listwhite += entry
+
+    if not listwhite == BASIC_WHITE_STRING:
+        update.effective_message.reply_text(listwhite)
 
 
 @user_admin
@@ -197,11 +256,8 @@ def del_lockables(bot: Bot, update: Update):
                 #allow whitelisted URLs
                 if lockable == 'url':
                     entities = message.parse_entities(MessageEntity.URL)
-                    #caches compiled expressions to reuse if multiple urls in a message
-                    whitelist = [re.compile(r'(^http:\/\/|^https:\/\/|^ftp:\/\/|^)(www\.)?('+white+')')
-                            for white in Config.WHITELIST]
                     #if all URLs are any of the whitelisted ones, it's good
-                    if all( any(white.search(text) for white in whitelist)
+                    if all( any(regexp.search(text) for regexp in sql.get_whitelist(chat.id).values())
                             for text in entities.values()):
                         continue
                 try:
@@ -301,11 +357,14 @@ def __chat_settings__(chat_id, user_id):
 
 __help__ = """
  - /locktypes: a list of possible locktypes
+- /whitelisted: lists urls in this chat's whitelist
 
 *Admin only:*
  - /lock <type>: lock items of a certain type (not available in private)
  - /unlock <type>: unlock items of a certain type (not available in private)
  - /locks: the current list of locks in this chat.
+ - /whitelist <url>: add url to whitelist so it's not deleted by URL lock (accepts multiple)
+ - /unwhitelist <url>: remove url from whitelist (accepts multiple)
 
 Locks can be used to restrict a group's users.
 eg:
@@ -317,15 +376,21 @@ Restrictions don't delete messages. Restricted members can never send them in th
 
 __mod_name__ = "Locks"
 
-LOCKTYPES_HANDLER = DisableAbleCommandHandler("locktypes", locktypes)
+LOCKTYPES_HANDLER = DisableAbleCommandHandler("locktypes", locktypes, admin_ok=True)
 LOCK_HANDLER = CommandHandler("lock", lock, pass_args=True, filters=Filters.group)
 UNLOCK_HANDLER = CommandHandler("unlock", unlock, pass_args=True, filters=Filters.group)
 LOCKED_HANDLER = CommandHandler("locks", list_locks, filters=Filters.group)
+WHITELIST_HANDLER = CommandHandler("whitelist", add_whitelist, filters=Filters.group)
+UNWHITELIST_HANDLER = CommandHandler("unwhitelist", remove_whitelist, filters=Filters.group)
+WHITELISTED_HANDLER = DisableAbleCommandHandler("whitelisted", list_white, filters=Filters.group, admin_ok=True)
 
 dispatcher.add_handler(LOCK_HANDLER)
 dispatcher.add_handler(UNLOCK_HANDLER)
 dispatcher.add_handler(LOCKTYPES_HANDLER)
 dispatcher.add_handler(LOCKED_HANDLER)
+dispatcher.add_handler(WHITELIST_HANDLER)
+dispatcher.add_handler(UNWHITELIST_HANDLER)
+dispatcher.add_handler(WHITELISTED_HANDLER)
 
 dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, del_lockables), PERM_GROUP)
 #dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, rest_handler), REST_GROUP)
