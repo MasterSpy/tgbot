@@ -53,11 +53,20 @@ def filters(bot: Bot, update: Update):
     if len(args) < 2:
         return
 
+
     extracted = split_quotes(args[1])
     if len(extracted) < 1:
         return
-    # set trigger -> lower, so as to avoid adding duplicate filters with different cases
-    keyword = extracted[0].lower()
+    if extracted[0].startswith('/') and extracted[0].endswith('/'):
+        keyword = extracted[0]
+        try:
+            re.compile(keyword[1:-1])
+        except Exception as e:
+            msg.reply_text('Error compiling regexp: '+str(e))
+            return
+    else:
+        # set trigger -> lower, so as to avoid adding duplicate filters with different cases
+        keyword = extracted[0].lower()
 
     is_sticker = False
     is_document = False
@@ -151,7 +160,10 @@ def reply_filter(bot: Bot, update: Update):
 
     chat_filters = sql.get_chat_triggers(chat.id)
     for keyword in chat_filters:
-        pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
+        if keyword.startswith('/') and keyword.endswith('/'):
+            pattern = keyword[1:-1]
+        else:
+            pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
         if re.search(pattern, to_match, flags=re.IGNORECASE):
             filt = sql.get_filter(chat.id, keyword)
             if filt.is_sticker:
@@ -213,10 +225,11 @@ __help__ = """
  - /filters: list all active filters in this chat.
 
 *Admin only:*
- - /filter <keyword> <reply message>: add a filter to this chat. The bot will now reply that message whenever 'keyword'\
+ - /filter <keyword> <reply message>: add a filter to this chat. The bot will now reply that message whenever 'keyword' \
 is mentioned. If you reply to a sticker with a keyword, the bot will reply with that sticker. NOTE: all filter \
 keywords are in lowercase. If you want your keyword to be a sentence, use quotes. eg: /filter "hey there" How you \
-doin?
+doin? If the keyword starts and ends with a "/" it is treated as a python regular expression. Use quotes if there are \
+spaces in the regexp. Backslashes must be escaped "\\\\".
  - /stop <filter keyword>: stop that filter.
 """
 
