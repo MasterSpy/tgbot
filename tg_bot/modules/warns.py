@@ -209,9 +209,18 @@ def add_warn_filter(bot: Bot, update: Update):
     extracted = split_quotes(args[1])
 
     if len(extracted) >= 2:
-        # set trigger -> lower, so as to avoid adding duplicate filters with different cases
-        keyword = extracted[0].lower()
-        content = extracted[1]
+        if extracted[0].startswith('/') and extracted[0].endswith('/'):
+            try:
+                re.compile(extracted[0][1:-1])
+                keyword = extracted[0]
+                content = extracted[1]
+            except Exception as e:
+                msg.reply_text('Error compiling regexp: '+str(e))
+                return
+        else:
+            # set trigger -> lower, so as to avoid adding duplicate filters with different cases
+            keyword = extracted[0].lower()
+            content = extracted[1]
 
     else:
         return
@@ -270,7 +279,10 @@ def list_warn_filters(bot: Bot, update: Update):
 
     filter_list = CURRENT_WARNING_FILTER_STRING
     for keyword in all_handlers:
-        entry = " - {}\n".format(html.escape(keyword))
+        if keyword.startswith('/') and keyword.endswith('/'):
+            entry = " - <code>{}</code>\n".format(html.escape(keyword))
+        else:
+            entry = " - {}\n".format(html.escape(keyword))
         if len(entry) + len(filter_list) > telegram.MAX_MESSAGE_LENGTH:
             update.effective_message.reply_text(filter_list, parse_mode=ParseMode.HTML)
             filter_list = entry
@@ -293,7 +305,10 @@ def reply_filter(bot: Bot, update: Update) -> str:
         return ""
 
     for keyword in chat_warn_filters:
-        pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
+        if keyword.startswith('/') and keyword.endswith('/'):
+            pattern = keyword[1:-1]
+        else:
+            pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
         if re.search(pattern, to_match, flags=re.IGNORECASE):
             user = update.effective_user  # type: Optional[User]
             warn_filter = sql.get_warn_filter(chat.id, keyword)
@@ -399,7 +414,8 @@ __help__ = """
  - /warn <userhandle>: warn a user. After 3 warns, the user will be banned from the group. Can also be used as a reply.
  - /resetwarn <userhandle>: reset the warnings for a user. Can also be used as a reply.
  - /addwarn <keyword> <reply message>: set a warning filter on a certain keyword. If you want your keyword to \
-be a sentence, encompass it with quotes, as such: `/addwarn "very angry" This is an angry user`. 
+be a sentence, encompass it with quotes, as such: `/addwarn "very angry" This is an angry user`. If the keyword starts \
+with a "/" it is treated as a python regular expression ending in the first (unescaped) "/"
  - /nowarn <keyword>: stop a warning filter
  - /warnlimit <num>: set the warning limit
  - /strongwarn <on/yes/off/no>: If set to on, exceeding the warn limit will result in a ban. Else, will just kick.

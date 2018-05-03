@@ -32,7 +32,10 @@ def list_handlers(bot: Bot, update: Update):
 
     filter_list = BASIC_FILTER_STRING
     for keyword in all_handlers:
-        entry = " - {}\n".format(escape_markdown(keyword))
+        if keyword.startswith('/') and keyword.endswith('/'):
+            entry = " - `{}`\n".format(escape_markdown(keyword))
+        else:
+            entry = " - {}\n".format(escape_markdown(keyword))
         if len(entry) + len(filter_list) > telegram.MAX_MESSAGE_LENGTH:
             update.effective_message.reply_text(filter_list, parse_mode=telegram.ParseMode.MARKDOWN)
             filter_list = entry
@@ -58,9 +61,9 @@ def filters(bot: Bot, update: Update):
     if len(extracted) < 1:
         return
     if extracted[0].startswith('/') and extracted[0].endswith('/'):
-        keyword = extracted[0]
         try:
-            re.compile(keyword[1:-1])
+            re.compile(extracted[0][1:-1])
+            keyword = extracted[0]
         except Exception as e:
             msg.reply_text('Error compiling regexp: '+str(e))
             return
@@ -228,8 +231,8 @@ __help__ = """
  - /filter <keyword> <reply message>: add a filter to this chat. The bot will now reply that message whenever 'keyword' \
 is mentioned. If you reply to a sticker with a keyword, the bot will reply with that sticker. NOTE: all filter \
 keywords are in lowercase. If you want your keyword to be a sentence, use quotes. eg: /filter "hey there" How you \
-doin? If the keyword starts and ends with a "/" it is treated as a python regular expression. Use quotes if there are \
-spaces in the regexp. Backslashes must be escaped "\\\\".
+doin? If the keyword starts with a "/" it is treated as a python regular expression ending in the first (unescaped) \
+"/"
  - /stop <filter keyword>: stop that filter.
 """
 
