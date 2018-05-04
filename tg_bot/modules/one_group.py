@@ -34,10 +34,11 @@ def announce(bot, update):
     if user.id in SUDO_USERS:
         announcement = message.text.split(maxsplit=1)
         if len(announcement) <2:
-            update.effective_chat.send_message(text="You must type something after the command to be announced")
+            update.effective_chat.send_message(text="You must type something to be announced after the command.")
         else:
             try:
                 bot.send_message(chat_id=ALLOWED_GROUP, text=announcement[1], parse_mode=ParseMode.MARKDOWN)
+                update.effective_chat.send_message(text="Announced!")
             except error.BadRequest as e:
                 update.effective_chat.send_message(text=str(e))
 
