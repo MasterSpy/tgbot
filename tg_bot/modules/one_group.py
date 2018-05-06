@@ -12,7 +12,9 @@ try:
 except ValueError:
     raise Exception("Your ALLOWED_GROUP variable is not a valid integer.")
 except:
-    raise Exception("config.py must have valid ALLOWED_GROUP value for this module to work")
+    raise Exception("config.py must have valid ALLOWED_GROUP value for the one_group module to work. You can assign "
+                    "it to any numeric value for now, and send /id command to the group so the bot can inform you. Or "
+                    "you can add 'one_group' to the NO_LOAD list to ignore this module.")
 
 #returns true if the command is exactly "/id". This is the only command that is allowed on other groups
 class IdCommand(BaseFilter):
@@ -60,7 +62,7 @@ Disable all commands (except `/id`) in all groups except the group set in `Confi
 {})
 
 *Admin only:*
- - /announce <message>: send a message to the group via the bot, with [markdown]\
-(https://core.telegram.org/bots/api#markdown-style) enabled.""".format(ALLOWED_GROUP)
+ - /announce <message>: send a message to the group via the bot, with markdown enabled.
+""".format(ALLOWED_GROUP)
 
 __mod_name__ = "One Group"
