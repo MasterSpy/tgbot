@@ -18,15 +18,14 @@ from tg_bot.modules.helper_funcs.chat_status import is_user_admin
 from tg_bot.modules.helper_funcs.misc import paginate_modules
 
 PM_START_TEXT = """
-Hi, I'm a group manager bot exclusive for the official Coinomi support channel. Join it here: @coinomi\_official
-{rules}
-Hit /help to know a bit more about me.
+Hello, I'm glad you want to know more about our ICO!
+
+I'm being loaded with all the information, soon you will be able to talk to me and know all about it!
 """
 
 USER_HELPSTRING = """
 You can see the original source code that I'm based on [here](github.com/PaulSonOfLars/tgbot) or talk to it directly \
-at @BanhammerMarie\_bot. My bot's source code is [here](github.com/MasterSpy/tgbot). If you want to make donations \
-hit /donate!
+at @BanhammerMarie\_bot.
 """
 
 HELP_STRINGS = """
@@ -47,8 +46,7 @@ It took lots of work for @SonOfLars to get his bots to where they are now, and e
 donation helps motivate him to make them even better. All the donation money will go to a better VPS to host the \
 original bot, and/or beer (see his bio!). He's just a poor student, so every little helps!
 There are two ways of paying him; [PayPal](paypal.me/PaulSonOfLars), or [Monzo](monzo.me/paulnionvestergaardlarsen).
-You can also talk directly to his bot at @BanhammerMarie\_bot
-If you want to make donations directly to Coinomi, the BTC donation address is `1DJ1tiP14NpX1kCi6H69eNGY8m1XBWiiYB`."""
+"""
 
 IMPORTED = {}
 MIGRATEABLE = []
@@ -139,13 +137,9 @@ def start(bot: Bot, update: Update, args: List[str]):
                 IMPORTED["rules"].send_rules(update, args[0], from_pm=True)
 
         else:
-            if 'rules' in IMPORTED and 'one group' in IMPORTED:
-                rules = '\nThe rules for the group are:\n'+IMPORTED['rules'].sql.get_rules(IMPORTED['one group'].ALLOWED_GROUP)+'\n'
-            else:
-                rules = ''
             first_name = update.effective_user.first_name
             update.effective_message.reply_text(
-                PM_START_TEXT.format(rules=rules), parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+                PM_START_TEXT, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
     else:
         #update.effective_message.reply_text("Yo, whadup?")
         return
