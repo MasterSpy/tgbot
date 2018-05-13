@@ -24,22 +24,21 @@ I'm being loaded with all the information, soon you will be able to talk to me a
 """
 
 USER_HELPSTRING = """
-You can see the original source code that I'm based on [here](github.com/PaulSonOfLars/tgbot) or talk to it directly \
-at @BanhammerMarie\_bot.
+You can see the original source code that I'm based on [here](github.com/PaulSonOfLars/tgbot) or my own \
+[here](https://github.com/MasterSpy/tgbot/tree/ico)
 """
 
 HELP_STRINGS = """
 *Main* commands available:
- - /start: start the bot
+{}
+ - /start: send welcome message
  - /help: PM's you this message.
  - /help <module name>: PM's you info about that module.
- - /donate: information about how to donate!
  - /settings:
    - in PM: will send you your settings for all supported modules.
    - in a group: will redirect you to pm, with all that chat's settings.
-{}
 And the following:
-""".format("" if not ALLOW_EXCL else "All commands can either be used with / or !.\n")
+""".format("" if not ALLOW_EXCL else "_All commands can either be used with / or !._")
 
 DONATE_STRING = """Heya, glad to hear you want to donate!
 It took lots of work for @SonOfLars to get his bots to where they are now, and every \
