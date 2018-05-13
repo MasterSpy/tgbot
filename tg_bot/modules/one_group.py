@@ -4,7 +4,8 @@ from telegram import ParseMode, error
 from telegram.ext import Filters, MessageHandler, CommandHandler, DispatcherHandlerStop, run_async
 from telegram.ext.filters import BaseFilter
 from tg_bot.config import Development as Config
-from tg_bot import dispatcher, updater, SUDO_USERS
+from tg_bot import dispatcher, updater
+import tg_bot
 
 #check if allowed group is valid
 try:
@@ -33,7 +34,7 @@ def mute_group(bot, update):
 def announce(bot, update):
     message = update.effective_message  # type: Optional[Message]
     user = update.effective_user  # type: Optional[User]
-    if user.id in SUDO_USERS:
+    if user.id in tg_bot.SUDO_USERS:
         announcement = message.text.split(maxsplit=1)
         if len(announcement) <2:
             update.effective_chat.send_message(text="You must type something to be announced after the command.")
@@ -55,7 +56,7 @@ dispatcher.add_handler(ANNOUNCE_HANDLER)
 
 #add all admins of allowed group to sudo, so regular users have differentiated messages
 administrators = set(member.user.id for member in updater.bot.get_chat_administrators(ALLOWED_GROUP) if not member.user.is_bot)
-SUDO_USERS = list(set(SUDO_USERS) | administrators)
+tg_bot.SUDO_USERS = list(set(tg_bot.SUDO_USERS) | administrators)
 
 __help__ = """
 Disable all commands (except `/id`) in all groups except the group set in `Config.ALLOWED_GROUP` (currently set to \
