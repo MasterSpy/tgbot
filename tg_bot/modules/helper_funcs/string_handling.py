@@ -6,6 +6,7 @@ import emoji
 from telegram import MessageEntity
 from telegram.utils.helpers import escape_markdown
 
+# NOTE: the url \ escape may cause double escapes
 # match * (bold) (don't escape if in url)
 # match _ (italics) (don't escape if in url)
 # match ` (code)
@@ -19,7 +20,7 @@ MATCH_MD = re.compile(r'\*(.*?)\*|'
 
 # regex to find []() links -> hyperlinks/buttons
 LINK_REGEX = re.compile(r'(?<!\\)\[.+?\]\((.*?)\)')
-BTN_URL_REGEX = re.compile(r"(?<!\\)(\[([^\[]+?)\]\(buttonurl:(?:/{0,2})(.+?)(:same)?\))")
+BTN_URL_REGEX = re.compile(r"(\[([^\[]+?)\]\(buttonurl:(?:/{0,2})(.+?)(:same)?\))")
 
 
 def _selective_escape(to_parse: str) -> str:
@@ -120,10 +121,23 @@ def button_markdown_parser(txt: str, entities: Dict[MessageEntity, str] = None, 
     note_data = ""
     buttons = []
     for match in BTN_URL_REGEX.finditer(markdown_note):
-        # create a thruple with button label, url, and newline status
-        buttons.append((match.group(2), match.group(3), bool(match.group(4))))
-        note_data += markdown_note[prev:match.start(1)]
-        prev = match.end(1)
+        # Check if btnurl is escaped
+        n_escapes = 0
+        to_check = match.start(1) - 1
+        while to_check > 0 and markdown_note[to_check] == "\\":
+            n_escapes += 1
+            to_check -= 1
+
+        # if even, not escaped -> create button
+        if n_escapes % 2 == 0:
+            # create a thruple with button label, url, and newline status
+            buttons.append((match.group(2), match.group(3), bool(match.group(4))))
+            note_data += markdown_note[prev:match.start(1)]
+            prev = match.end(1)
+        # if odd, escaped -> move along
+        else:
+            note_data += markdown_note[prev:to_check]
+            prev = match.start(1) - 1
     else:
         note_data += markdown_note[prev:]
 
@@ -167,13 +181,18 @@ def escape_invalid_curly_brackets(text: str, valids: List[str]) -> str:
     return new_text
 
 
+SMART_OPEN = '“'
+SMART_CLOSE = '”'
+START_CHAR = ('\'', '"', '/', SMART_OPEN)
+
+
 def split_quotes(text: str) -> List:
-    if text.startswith('\'') or text.startswith('"') or text.startswith('/'):
+    if any(text.startswith(char) for char in START_CHAR):
         counter = 1  # ignore first char -> is some kind of quote
         while counter < len(text):
             if text[counter] == "\\":
                 counter += 1
-            elif text[counter] == text[0]:
+            elif text[counter] == text[0] or (text[0] == SMART_OPEN and text[counter] == SMART_CLOSE):
                 break
             counter += 1
         else:
