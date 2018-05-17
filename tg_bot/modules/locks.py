@@ -28,7 +28,10 @@ LOCK_TYPES = {'sticker': Filters.sticker,
               'contact': Filters.contact,
               'photo': Filters.photo,
               'gif': Filters.document & CustomFilters.mime_type("video/mp4"),
-              'url': Filters.entity(MessageEntity.URL) | Filters.caption_entity(MessageEntity.URL),
+              'url': Filters.entity(MessageEntity.URL) |
+                     Filters.caption_entity(MessageEntity.URL) |
+                     Filters.entity(MessageEntity.TEXT_LINK) |
+                     Filters.caption_entity(MessageEntity.TEXT_LINK),
               'bots': Filters.status_update.new_chat_members,
               'forward': Filters.forwarded,
               'game': Filters.game
@@ -251,14 +254,17 @@ def del_lockables(bot: Bot, update: Update):
                             return
 
                         chat.kick_member(new_mem.id)
-                        message.reply_text("Only admins are allowed to add bots to this chat! Get outta here.")
+                        message.reply_text("Only admins are allowed to add bots to this chat!")
             else:
                 #allow whitelisted URLs
                 if lockable == 'url':
-                    entities = message.parse_entities(MessageEntity.URL)
-                    #if all URLs are any of the whitelisted ones, it's good
+                    entities = set(url for url in message.parse_entities(MessageEntity.URL).values())
+                    #MessageEntity.TEXT_LINK could be added in the filter above, but would return the text, not the url,
+                    #so add all entities that have a 'url' field instead
+                    entities = entities | set(entity.url for entity in message.entities if entity.url)
+                    #if all URLs are any of the whitelisted ones, accept the message
                     if all( any(regexp.search(text) for regexp in sql.get_whitelist(chat.id).values())
-                            for text in entities.values()):
+                            for text in entities):
                         continue
                 try:
                     message.delete()
