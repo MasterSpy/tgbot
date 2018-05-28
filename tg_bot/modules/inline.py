@@ -1,15 +1,19 @@
 import json
 import urllib.request
+import re
 
 from telegram import InlineQueryResultArticle, InputTextMessageContent
-from telegram.ext import InlineQueryHandler
+from telegram.ext import InlineQueryHandler, ChosenInlineResultHandler, Handler
+from telegram.ext.dispatcher import run_async
 from tg_bot import dispatcher
 from tg_bot.config import Development as Config
+from tg_bot.modules.sql import inline_sql as sql
 from telegram.utils.helpers import escape_markdown
 
 FRESHDESK_URL = Config.FRESHDESK_URL
 SEARCH_URL = FRESHDESK_URL+'/support/search/solutions.json?term='
-ARTICLE_URL = FRESHDESK_URL+'/api/v2/solutions/articles/'
+ARTICLE_URL = FRESHDESK_URL+'/support/solutions/articles/'
+ARTICLE_ID_REGEXP = re.compile(r'\/(\d+)-')
 
 #check if freshdesk link is valid
 try:
@@ -19,11 +23,27 @@ except urllib.error.URLError as e:
 except:
     raise Exception('config.py must have valid FRESHDESK_URL value for the "fresh_inline" module to work')
 
+
+@run_async
 def inline_search(bot, update):
     query = update.inline_query.query
     
     if not query:
-        bot.answer_inline_query(update.inline_query.id, [])
+        bot.answer_inline_query(update.inline_query.id, [InlineQueryResultArticle(
+                                                                id = article.article_id,
+                                                                title = i+1,
+                                                                description = article.title,
+                                                                input_message_content = InputTextMessageContent(
+                                                                        message_text = '[{}]({})'.format(
+                                                                                escape_markdown(article.title),
+                                                                                ARTICLE_URL+str(article.article_id)
+                                                                            ),
+                                                                        parse_mode = 'Markdown',
+                                                                        disable_web_page_preview = True
+                                                                    ),
+                                                                )
+                                                         for i, article in enumerate(sql.get_top_searches())],
+                                )
         return
     
     with urllib.request.urlopen(SEARCH_URL+query.replace(' ', '%20')) as response:
@@ -33,7 +53,7 @@ def inline_search(bot, update):
         results = results [:49]
     
     results = [InlineQueryResultArticle(
-                    id = article['source']['article']['id'],
+                    id = ARTICLE_ID_REGEXP.search(article['url']).group(1),
                     title = article['source']['article']['title'],
                     input_message_content = InputTextMessageContent(
                             message_text = '[{}]({})'.format(
@@ -48,5 +68,16 @@ def inline_search(bot, update):
     
     bot.answer_inline_query(update.inline_query.id, results)
 
-inline_handler = InlineQueryHandler(inline_search)
-dispatcher.add_handler(inline_handler)
+
+@run_async
+def chosen_result(bot, update):
+    result_id = update.chosen_inline_result.result_id
+    with urllib.request.urlopen(ARTICLE_URL+result_id+'.json') as response:
+        article = json.loads(response.read())
+    sql.increment(result_id, article['article']['title'])
+
+
+INLINE_HANDLER = InlineQueryHandler(inline_search)
+CHOSEN_HANDLER = ChosenInlineResultHandler(chosen_result)
+dispatcher.add_handler(INLINE_HANDLER)
+dispatcher.add_handler(CHOSEN_HANDLER, -1)
