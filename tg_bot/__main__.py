@@ -18,15 +18,14 @@ from tg_bot.modules.helper_funcs.chat_status import is_user_admin
 from tg_bot.modules.helper_funcs.misc import paginate_modules
 
 PM_START_TEXT = """
-Hi, I'm a group manager bot exclusive for the official Coinomi support channel. Join it here: @coinomi\_official
+Hi, I'm a group manager bot exclusive for the official Coinomi support group. Join it here: @coinomi\_official
 {rules}
-Hit /help to know a bit more about me.
+
+Also join the announcements channel @coinomiwallet
 """
 
 USER_HELPSTRING = """
-You can see the original source code that I'm based on [here](github.com/PaulSonOfLars/tgbot) or talk to it directly \
-at @BanhammerMarie\_bot. My bot's source code is [here](github.com/MasterSpy/tgbot). If you want to make donations \
-hit /donate!
+If you want to make donations hit /donate! If you want to see my source code, please contact @fer_coinomi
 """
 
 HELP_STRINGS = """
