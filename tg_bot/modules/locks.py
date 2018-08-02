@@ -235,11 +235,7 @@ def unlock(bot: Bot, update: Update, args: List[str]) -> str:
                 elif args[0] == "all":
                     unrestr_members(bot, chat.id, members, True, True, True, True)
                 """
-<<<<<<< HEAD
                 message.reply_text("Unlocked {} for new members!".format(args[0]))
-=======
-                message.reply_text("Unlocked {} for everyone!".format(args[0]))
->>>>>>> dfe7a0e8d3284ad990b4b4dc2e3c0deaa4f85b4a
 
                 return "<b>{}:</b>" \
                        "\n#UNLOCK" \
