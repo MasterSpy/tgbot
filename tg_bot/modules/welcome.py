@@ -29,6 +29,7 @@ ENUM_FUNC_MAP = {
     sql.Types.VIDEO.value: dispatcher.bot.send_video
 }
 
+DELETE_SERVICE = False
 
 # do not async
 def send(update, message, keyboard, backup_message):
@@ -88,13 +89,8 @@ def new_member(bot: Bot, update: Update):
         sent = None
         new_members = update.effective_message.new_chat_members
         for new_mem in new_members:
-            # Give the owner a special welcome
-            if new_mem.id == OWNER_ID:
-                update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
-                continue
-
             # Don't welcome yourself
-            elif new_mem.id == bot.id:
+            if new_mem.id == bot.id:
                 continue
 
             else:
@@ -142,6 +138,9 @@ def new_member(bot: Bot, update: Update):
 
             if sent:
                 sql.set_clean_welcome(chat.id, sent.message_id)
+
+    if DELETE_SERVICE:
+        update.effective_message.delete()
 
 
 @run_async
@@ -193,6 +192,9 @@ def left_member(bot: Bot, update: Update):
             keyboard = InlineKeyboardMarkup(keyb)
 
             send(update, res, keyboard, sql.DEFAULT_GOODBYE)
+
+    if DELETE_SERVICE:
+        update.effective_message.delete()
 
 
 @run_async
@@ -400,6 +402,18 @@ def clean_welcome(bot: Bot, update: Update, args: List[str]) -> str:
         return ""
 
 
+@run_async
+@user_admin
+def toggle_service(bot: Bot, update: Update) -> str:
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+
+    global DELETE_SERVICE
+    DELETE_SERVICE = not(DELETE_SERVICE)
+
+    update.effective_message.reply_text("I will delete service messages" if DELETE_SERVICE else "I will not delete service messages")
+
+
 WELC_HELP_TXT = "Your group's welcome/goodbye messages can be personalised in multiple ways. If you want the messages" \
                 " to be individually generated, like the default welcome message is, you can use *these* variables:\n" \
                 " - `{{first}}`: this represents the user's *first* name\n" \
@@ -467,6 +481,7 @@ __help__ = """
  - /resetwelcome: reset to the default welcome message.
  - /resetgoodbye: reset to the default goodbye message.
  - /cleanwelcome <on/off>: On new member, try to delete the previous welcome message to avoid spamming the chat.
+ - /toggleservice: toggles the deletion of service messages (resets on bot restart)
 
  - /welcomehelp: view more formatting information for custom welcome/goodbye messages.
 """.format(WELC_HELP_TXT)
@@ -483,6 +498,7 @@ RESET_WELCOME = CommandHandler("resetwelcome", reset_welcome, filters=Filters.gr
 RESET_GOODBYE = CommandHandler("resetgoodbye", reset_goodbye, filters=Filters.group)
 CLEAN_WELCOME = CommandHandler("cleanwelcome", clean_welcome, pass_args=True, filters=Filters.group)
 WELCOME_HELP = CommandHandler("welcomehelp", welcome_help)
+TOGGLE_SERVICE = CommandHandler("toggleservice", toggle_service, filters=Filters.group)
 
 dispatcher.add_handler(NEW_MEM_HANDLER)
 dispatcher.add_handler(LEFT_MEM_HANDLER)
@@ -494,3 +510,4 @@ dispatcher.add_handler(RESET_WELCOME)
 dispatcher.add_handler(RESET_GOODBYE)
 dispatcher.add_handler(CLEAN_WELCOME)
 dispatcher.add_handler(WELCOME_HELP)
+dispatcher.add_handler(TOGGLE_SERVICE)
