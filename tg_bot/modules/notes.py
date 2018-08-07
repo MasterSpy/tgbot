@@ -115,8 +115,6 @@ def cmd_get(bot: Bot, update: Update, args: List[str]):
         get(bot, update, args[0], show_none=True, no_format=True)
     elif len(args) >= 1:
         get(bot, update, args[0], show_none=True)
-    else:
-        update.effective_message.reply_text("Get rekt")
 
 
 @run_async
