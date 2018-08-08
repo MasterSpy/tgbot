@@ -8,7 +8,6 @@ from telegram.ext.dispatcher import run_async
 from tg_bot import dispatcher
 from tg_bot.config import Development as Config
 from tg_bot.modules.sql import inline_sql as sql
-from telegram.utils.helpers import escape_markdown
 
 FRESHDESK_URL = Config.FRESHDESK_URL
 SEARCH_URL = FRESHDESK_URL+'/support/search/solutions.json?term='
@@ -24,6 +23,10 @@ except:
     raise Exception('config.py must have valid FRESHDESK_URL value for the "fresh_inline" module to work')
 
 
+def escape_HTML(text):
+    return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
 @run_async
 def inline_search(bot, update):
     query = update.inline_query.query
@@ -34,11 +37,11 @@ def inline_search(bot, update):
                                                                 title = i+1,
                                                                 description = article.title,
                                                                 input_message_content = InputTextMessageContent(
-                                                                        message_text = '[{}]({})'.format(
-                                                                                escape_markdown(article.title),
-                                                                                ARTICLE_URL+str(article.article_id)
+                                                                        message_text = 'FAQ page: <a href="{}">{}</a>'.format(
+                                                                                ARTICLE_URL+str(article.article_id),
+                                                                                escape_HTML(article.title)
                                                                             ),
-                                                                        parse_mode = 'Markdown',
+                                                                        parse_mode = 'HTML',
                                                                         disable_web_page_preview = True
                                                                     ),
                                                                 )
@@ -56,11 +59,11 @@ def inline_search(bot, update):
                     id = ARTICLE_ID_REGEXP.search(article['url']).group(1),
                     title = article['source']['article']['title'],
                     input_message_content = InputTextMessageContent(
-                            message_text = '[{}]({})'.format(
-                                    escape_markdown(article['source']['article']['title']),
-                                    FRESHDESK_URL+article['url']
+                            message_text = 'FAQ page: <a href="{}">{}</a>'.format(
+                                    FRESHDESK_URL+article['url'],
+                                    escape_HTML(article['source']['article']['title'])
                                 ),
-                            parse_mode = 'Markdown',
+                            parse_mode = 'HTML',
                             disable_web_page_preview = True
                         ),
                     description = article['source']['article']['desc_un_html'][:80]+'...'
