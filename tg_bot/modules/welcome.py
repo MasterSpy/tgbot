@@ -29,7 +29,7 @@ ENUM_FUNC_MAP = {
     sql.Types.VIDEO.value: dispatcher.bot.send_video
 }
 
-DELETE_SERVICE = False
+DELETE_SERVICE = True
 
 # do not async
 def send(update, message, keyboard, backup_message):
