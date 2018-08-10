@@ -25,7 +25,7 @@ Also join the announcements channel @coinomiwallet
 """
 
 USER_HELPSTRING = """
-If you want to make donations hit /donate! If you want to see my source code, please contact @fer_coinomi
+If you want to make donations hit /donate! If you want to see my source code, please contact @fer\_coinomi
 """
 
 HELP_STRINGS = """
