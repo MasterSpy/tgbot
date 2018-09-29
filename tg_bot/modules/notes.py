@@ -176,13 +176,13 @@ def list_notes(bot: Bot, update: Update):
 
     msg = "*Notes in chat:* (use hashtag to send)\n"
     for note in note_list:
-        note_name = " - `{}`\n".format(escape_markdown(note.name))
+        note_name = " `#{}`\n".format(escape_markdown(note.name))
         if len(msg) + len(note_name) > MAX_MESSAGE_LENGTH:
             update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
             msg = ""
         msg += note_name
 
-    if msg == "*Notes in chat:*\n":
+    if msg == "*Notes in chat:* (use hashtag to send)\n":
         update.effective_message.reply_text("No notes in this chat!")
 
     elif len(msg) != 0:
