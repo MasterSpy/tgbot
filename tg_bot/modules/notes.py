@@ -10,7 +10,7 @@ from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown
 
 import tg_bot.modules.sql.notes_sql as sql
-from tg_bot import dispatcher, MESSAGE_DUMP, LOGGER
+from tg_bot import dispatcher, MESSAGE_DUMP, LOGGER, SUDO_USERS
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
@@ -40,8 +40,10 @@ def get(bot, update, notename, show_none=True, no_format=False):
         # If we're replying to a message, reply to that message (unless it's an error)
         if message.reply_to_message:
             reply_id = message.reply_to_message.message_id
-        else:
+        elif update.effective_message.from_user.id not in SUDO_USERS:
             reply_id = message.message_id
+        else:
+            reply_id = None
 
         if note.is_reply:
             if MESSAGE_DUMP:
