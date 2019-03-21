@@ -440,7 +440,7 @@ def main():
         LOGGER.info("Using long polling.")
         updater.start_polling(timeout=15,
                               read_latency=4,
-                              allowed_updates=['message', 'inline_query', 'chosen_inline_result', 'callback_query'])
+                              allowed_updates=['message', 'inline_query', 'chosen_inline_result', 'callback_query', 'edited_message'])
 
     updater.idle()
 

@@ -256,7 +256,6 @@ def unlock(bot: Bot, update: Update, args: List[str]) -> str:
 def del_lockables(bot: Bot, update: Update):
     chat = update.effective_chat  # type: Optional[Chat]
     message = update.effective_message  # type: Optional[Message]
-
     for lockable, filter in LOCK_TYPES.items():
         if filter(message) and sql.is_locked(chat.id, lockable) and can_delete(chat, bot.id):
             if lockable == "bots":
@@ -414,6 +413,6 @@ dispatcher.add_handler(WHITELIST_HANDLER)
 dispatcher.add_handler(UNWHITELIST_HANDLER)
 dispatcher.add_handler(WHITELISTED_HANDLER)
 
-dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, del_lockables), PERM_GROUP)
+dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, del_lockables, edited_updates=True), PERM_GROUP)
 #dispatcher.add_handler(MessageHandler(Filters.all & Filters.group, rest_handler), REST_GROUP)
 dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member), REST_GROUP)
