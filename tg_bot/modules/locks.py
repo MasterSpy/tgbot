@@ -256,8 +256,11 @@ def unlock(bot: Bot, update: Update, args: List[str]) -> str:
 def del_lockables(bot: Bot, update: Update):
     chat = update.effective_chat  # type: Optional[Chat]
     message = update.effective_message  # type: Optional[Message]
+
+    _can_delete = can_delete(chat, bot.id)
+
     for lockable, filter in LOCK_TYPES.items():
-        if filter(message) and sql.is_locked(chat.id, lockable) and can_delete(chat, bot.id):
+        if filter(message) and sql.is_locked(chat.id, lockable) and _can_delete:
             if lockable == "bots":
                 new_members = update.effective_message.new_chat_members
                 for new_mem in new_members:
