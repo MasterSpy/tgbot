@@ -35,7 +35,8 @@ def check_flood(bot: Bot, update: Update) -> str:
 
     try:
         chat.kick_member(user.id)
-        msg.reply_text("I banned this user for flooding.")
+        chat.send_message("I banned {} for flooding.".format(mention_html(user.id, user.first_name)),
+                            parse_mode='HTML')
 
         return "<b>{}:</b>" \
                "\n#BANNED" \
