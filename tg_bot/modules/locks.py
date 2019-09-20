@@ -24,11 +24,12 @@ from tg_bot.modules.sql import users_sql
 LOCK_TYPES = {'sticker': Filters.sticker,
               'audio': Filters.audio,
               'voice': Filters.voice,
-              'document': Filters.document,
+              'document': Filters.document & ~Filters.animation,
               'video': Filters.video,
+              'videonote': Filters.video_note,
               'contact': Filters.contact,
               'photo': Filters.photo,
-              'gif': Filters.document & CustomFilters.mime_type("video/mp4"),
+              'gif': Filters.animation,
               'url': Filters.entity(MessageEntity.URL) |
                      Filters.caption_entity(MessageEntity.URL) |
                      Filters.entity(MessageEntity.TEXT_LINK) |
@@ -39,9 +40,9 @@ LOCK_TYPES = {'sticker': Filters.sticker,
               'location': Filters.location,
               }
 
-GIF = Filters.document & CustomFilters.mime_type("video/mp4")
+GIF = Filters.animation
 OTHER = Filters.game | Filters.sticker | GIF
-MEDIA = Filters.audio | Filters.document | Filters.video | Filters.voice | Filters.photo
+MEDIA = Filters.audio | Filters.document | Filters.video | Filters.video_note | Filters.voice | Filters.photo
 MESSAGES = Filters.text | Filters.contact | Filters.location | Filters.venue | Filters.command | MEDIA | OTHER
 PREVIEWS = Filters.entity("url")
 
@@ -343,6 +344,7 @@ def build_lock_message(chat_id):
                    "\n - voice = `{}`" \
                    "\n - document = `{}`" \
                    "\n - video = `{}`" \
+                   "\n - videonote = `{}`" \
                    "\n - contact = `{}`" \
                    "\n - photo = `{}`" \
                    "\n - gif = `{}`" \
@@ -351,7 +353,7 @@ def build_lock_message(chat_id):
                    "\n - forward = `{}`" \
                    "\n - game = `{}`" \
                    "\n - location = `{}`".format(locks.sticker, locks.audio, locks.voice, locks.document,
-                                                 locks.video, locks.contact, locks.photo, locks.gif, locks.url,
+                                                 locks.video, locks.videonote, locks.contact, locks.photo, locks.gif, locks.url,
                                                  locks.bots, locks.forward, locks.game, locks.location)
         if restr:
             res += "\nNew member restrictions:" \

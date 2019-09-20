@@ -43,12 +43,12 @@ And the following:
 """.format("" if not ALLOW_EXCL else "All commands can either be used with / or !.\n")
 
 DONATE_STRING = """Heya, glad to hear you want to donate!
-It took lots of work for @SonOfLars to get his bots to where they are now, and every \
+It took lots of work for this bot's original creator to get his bots to where they are now, and every \
 donation helps motivate him to make them even better. All the donation money will go to a better VPS to host the \
 original bot, and/or beer (see his bio!). He's just a poor student, so every little helps!
 There are two ways of paying him; [PayPal](paypal.me/PaulSonOfLars), or [Monzo](monzo.me/paulnionvestergaardlarsen).
 You can also talk directly to his bot at @BanhammerMarie\_bot
-If you want to make donations directly to Coinomi, the BTC donation address is `1DJ1tiP14NpX1kCi6H69eNGY8m1XBWiiYB`."""
+If you want to make donations directly to Coinomi, contact our support."""
 
 IMPORTED = {}
 MIGRATEABLE = []
