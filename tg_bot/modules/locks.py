@@ -274,16 +274,19 @@ def del_lockables(bot: Bot, update: Update):
                         chat.kick_member(new_mem.id)
                         message.reply_text("Only admins are allowed to add bots to this chat!")
             else:
-                #allow whitelisted URLs
+                # allow whitelisted URLs
                 if lockable == 'url':
                     entities = set(url for url in message.parse_entities(MessageEntity.URL).values())
-                    #MessageEntity.TEXT_LINK could be added in the filter above, but would return the text, not the url,
-                    #so add all entities that have a 'url' field instead
+                    # MessageEntity.TEXT_LINK could be added in the filter above, but would return the text, not the
+                    # url, so add all entities that have a 'url' field instead
                     entities = entities | set(entity.url for entity in message.entities if entity.url)
-                    #if all URLs are any of the whitelisted ones, accept the message
-                    if all( any(regexp.search(text) for regexp in sql.get_whitelist(chat.id).values())
+                    # if all URLs are any of the whitelisted ones, accept the message
+                    if all(any(regexp.search(text) for regexp in sql.get_whitelist(chat.id).values())
                             for text in entities):
                         continue
+                    else:
+                        # forward me the message for review so I can add the sender to a scammer repository
+                        message.forward(Config.OWNER_ID, disable_notification=True)
                 try:
                     message.delete()
                 except BadRequest as excp:

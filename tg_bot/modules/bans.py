@@ -13,6 +13,7 @@ from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_us
 from tg_bot.modules.helper_funcs.extraction import extract_user_and_text
 from tg_bot.modules.helper_funcs.string_handling import extract_time
 from tg_bot.modules.log_channel import loggable
+from tg_bot.config import Development as Config
 
 
 @run_async
@@ -59,7 +60,11 @@ def ban(bot: Bot, update: Update, args: List[str]) -> str:
         log += "\n<b>Reason:</b> {}".format(reason)
 
     try:
-        chat.kick_member(user_id)
+        if getattr(Config, "ALLOWED_GROUPS"):
+            for group in Config.ALLOWED_GROUPS:
+                bot.kick_chat_member(group, user_id)
+        else:
+            chat.kick_member(user_id)
         #bot.send_sticker(chat.id, BAN_STICKER)  # banhammer marie sticker
         message.reply_text("Banned!")
         return log

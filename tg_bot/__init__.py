@@ -102,7 +102,7 @@ else:
 
 SUDO_USERS.add(OWNER_ID)
 
-updater = tg.Updater(TOKEN, workers=WORKERS)
+updater = tg.Updater(TOKEN, workers=WORKERS, request_kwargs={"proxy_url":"socks5://207.97.174.134:1080"})
 
 dispatcher = updater.dispatcher
 

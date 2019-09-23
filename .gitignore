@@ -3,3 +3,4 @@ tg_bot/config.py
 .idea/
 *~
 \#*\#
+venv/
