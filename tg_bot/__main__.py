@@ -145,7 +145,7 @@ def start(bot: Bot, update: Update, args: List[str]):
 
         else:
             if 'rules' in IMPORTED and 'one group' in IMPORTED:
-                rules = '\nThe rules for the group are:\n'+IMPORTED['rules'].sql.get_rules(IMPORTED['one group'].ALLOWED_GROUP)+'\n'
+                rules = '\nThe rules for the group are:\n'+IMPORTED['rules'].sql.get_rules(IMPORTED['one group'].ALLOWED_GROUPS[0])+'\n'
             else:
                 rules = ''
             first_name = update.effective_user.first_name

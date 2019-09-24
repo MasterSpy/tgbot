@@ -1,4 +1,4 @@
-# make the bot work on one group only - must have ALLOWED_GROUP set on config
+# make the bot work on one group only - must have ALLOWED_GROUPS set on config
 
 from telegram import ParseMode, error
 from telegram.ext import Filters, MessageHandler, CommandHandler, DispatcherHandlerStop, run_async
@@ -11,7 +11,7 @@ import tg_bot
 try:
     ALLOWED_GROUPS = [int(allowed) for allowed in Config.ALLOWED_GROUPS]
 except ValueError:
-    raise Exception("Your ALLOWED_GROUP variable is not a valid integer.")
+    raise Exception("Your ALLOWED_GROUPS variable is not a valid integer list.")
 except:
     raise Exception("config.py must have valid ALLOWED_GROUPS value for this module to work")
 
@@ -26,7 +26,6 @@ id_command = IdCommand()
 #can't be async to use handlerstop
 def mute_group(bot, update):
     #do nothing and stop any other handlers from activating
-    print("muted")
     raise DispatcherHandlerStop
 
 #capture every message received from a non-allowed group, except "/id" command
